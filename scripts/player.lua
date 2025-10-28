@@ -15,7 +15,7 @@ local player = {
 }
 
 function player:load()
-    self.sprite = love.graphics.newImage("(player spritesheet here)")
+    self.sprite = love.graphics.newImage("gamedata/sprites/player.png")
 
     local frame_width, frame_height = 32, 32
     local img_width, img_height = self.sprite:getWidth(), self.sprite:getHeight()
@@ -24,7 +24,7 @@ function player:load()
     for y = 0, img_height - frame_height, frame_height do
         local row = {}
         for x = 0, img_width - frame_width, frame_width do
-            table.insert(row. love.graphics.newQuad(x, y, frame_width, frame_height, img_width, img_height))
+            table.insert(row, love.graphics.newQuad(x, y, frame_width, frame_height, img_width, img_height))
         end
         table.insert(quads, row)
     end
@@ -32,17 +32,19 @@ function player:load()
     --definition of animations and by extension, the spritesheet
     self.animations = {
         -- Idling
-        idle_right = {},
-        idle_left = {},
-        idle_up = {},
-        idle_down = {},
+        idle_right = { frames = self.quads[1] },
+        idle_left = { frames = self.quads[1] },
+        idle_up = { frames = self.quads[1] },
+        idle_down = { frames = self.quads[1] },
 
         -- Walking / running
-        walking_right = {},
-        walking_left = {},
-        walking_up = {},
-        walking_down = {},
+        walking_right = { frames = self.quads[1] },
+        walking_left = { frames = self.quads[1] },
+        walking_up = { frames = self.quads[1] },
+        walking_down = { frames = self.quads[1] },
     }
+
+    self:set_animation("idle_down")
 end
 
 function player:set_animation(name)
@@ -57,17 +59,21 @@ function player:update(dt)
     local moving = false
 
     if love.keyboard.isDown("right", "d") then
+        self.direction = "right"
         self.x = self.x + self.speed * dt
         moving = true
     elseif love.keyboard.isDown("left", "a") then
+        self.direction = "left"
         self.x = self.x - self.speed * dt
         moving = true
     end
 
     if love.keyboard.isDown("down", "s") then
+        self.direction = "down"
         self.y = self.y + self.speed * dt
         moving = true
     elseif love.keyboard.isDown("up", "w") then
+        self.direction = "up"
         self.y = self.y - self.speed * dt
         moving = true
     end
@@ -78,9 +84,9 @@ function player:update(dt)
             self.set_animation("walking_right")
         elseif self.direction == "left" then
             self.set_animation("walking_left")
-        elseif self.direction == "up"
+        elseif self.direction == "up" then
             self.set_animation("walking_up")
-        elseif self.direction == "down"
+        elseif self.direction == "down" then
             self.set_animation("walking_down")
         else end
     else
@@ -88,18 +94,33 @@ function player:update(dt)
             self.set_animation("idle_right")
         elseif self.direction == "left" then
             self.set_animation("idle_left")
-        elseif self.direction == "up"
+        elseif self.direction == "up" then
             self.set_animation("idle_up")
-        elseif self.direction == "down"
+        elseif self.direction == "down" then
             self.set_animation("idle_down")
         else end
+    end
+
+    -- animation frame
+    local anim = self.animations[self.curr_anim]
+    if anim and #anim.frames > 1 then
+        self.timer = self.timer + dt
+        if self.timer >= anim.frame_time then
+            self.curr_frame = self.curr_frame + 1
+            self.timer = self.timer - anim.frame_time
+            
+            -- Loop the animation
+            if self.curr_frame > #anim.frames then
+                self.curr_frame = 1
+            end
+        end
     end
 end
 
 function player:draw()
     local anim = self.animations[self.curr_anim]
-    local frame = anim.frames[self.curr_frame]
-    love.graphics.draw(self.sprite, frame, self.x, self.y)
+    local frame_quad = anim.frames[self.curr_frame]
+    love.graphics.draw(self.sprite, frame_quad, self.x, self.y)
 end
 
 return player
